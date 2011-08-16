@@ -227,9 +227,8 @@ def compile_tokens(tokens):
                 curr_value_stack.append(arg)
     return curr_value_stack.pop() 
     
-# returns a 0-argument function which re-evaluates the expression
-# every time it's called. The env stays fixed but the values of its mappings
-# can change between calls (since it's assumed to be a mutable dict) 
+# returns a function which takes an environment dictionary and returns the 
+# value of the evaluated expression  
 def compile_expr(expr):
     tokens = tokenize(expr)
     return compile_tokens(tokens)
