@@ -7,7 +7,6 @@ def avg(x,y):
     return (x+y)/2
             
 def replace_inf(x,y):
-    x = x.copy()
     inf = np.isinf(x)
     if np.any(inf):
         x = x.copy()
@@ -15,7 +14,6 @@ def replace_inf(x,y):
     return x
     
 def replace_nan(x,y):
-    x = x.copy()
     nan = np.isnan(x)
     if np.any(nan):
         x = x.copy()
@@ -78,6 +76,9 @@ def select_smaller_abs(x,y):
 def when(x,y):
     return x[y]
     
+def medfilt(x, winsize):
+    return scipy.signal.medfilt(x, winsize)
+
 binops = { 
     '+': add, #np.add,
     '-': sub, #np.subtract, 
@@ -98,14 +99,14 @@ binops = {
     'safe_div': safe_div,
     'select_bigger_abs': select_bigger_abs,
     'select_smaller_abs': select_smaller_abs, 
-    'when': when 
+    'when': when, 
+    'medfilt': medfilt
 }
 
 
 def clean(x):
     top = scipy.stats.scoreatpercentile(x, 99)
-    bottom = scipy.stats.scoreatpercentile(x, 1)
-    
+    bottom = scipy.stats.scoreatpercentile(x, 1)    
     outliers = np.abs(x) > 2 * top 
     if np.any(outliers):
         x = x.copy()
@@ -113,26 +114,17 @@ def clean(x):
         x[outliers & (x > 0)] = top 
     return x
 
-
 def diff(x):
     return np.concatenate([[0], np.diff(x)])
     
-def slope(x):
-    return diff(x) / 1000.0
-
-def medfilt(x):
-    return scipy.signal.medfilt(x, 13)
-    
 unops = { 
     'diff': diff, 
-    'slope': slope, 
     'log': np.log, 
     'log10': np.log10, 
     'log2': np.log2, 
     'sin': np.sin, 
     'cos': np.cos, 
     'tan': np.tan, 
-    'medfilt': medfilt, 
     'std': np.std, 
     'mean': np.mean, 
     'abs': np.abs, 
@@ -196,14 +188,11 @@ def compile_tokens(tokens):
     
     # reversed since we evaluate right to left 
     for token in reversed(tokens): 
-        #print idx, ":",  token, " binop stack:", curr_waiting_binops
         if token in unops:
-            #assert len(curr_value_stack) >= 1 
             arg = curr_value_stack.pop()
             future_unop_result = mk_unop_fn(token, arg)
             curr_value_stack.append(future_unop_result)
         elif token in binops:
-            #assert len(curr_value_stack) >= 1
             curr_waiting_binops.append(token)
             
         elif token == ')':
@@ -213,16 +202,11 @@ def compile_tokens(tokens):
             curr_waiting_binops = [] 
             
         elif token == '(':
-            #assert len(curr_value_stack) == 1
             v = curr_value_stack.pop()
-            #assert len(old_value_stacks) >= 1
             curr_value_stack = old_value_stacks.pop()
-            #assert len(curr_waiting_binops) == 0
-            #assert len(old_waiting_binops) >= 1
             curr_waiting_binops = old_waiting_binops.pop()
             if len(curr_waiting_binops) > 0:
                 binop_name = curr_waiting_binops.pop()
-                #assert len(curr_value_stack) >= 1
                 rightArg = curr_value_stack.pop()
                 future_result = mk_binop_fn(binop_name, v, rightArg)
                 curr_value_stack.append(future_result) 
@@ -235,17 +219,12 @@ def compile_tokens(tokens):
             except: 
                 arg = mk_var_fn(token)
             if len(curr_waiting_binops) > 0:
-                #assert len(curr_value_stack) > 0
                 binop_name = curr_waiting_binops.pop()
                 rightArg = curr_value_stack.pop() 
                 future_result = mk_binop_fn(binop_name, arg, rightArg)
                 curr_value_stack.append(future_result)
             else:
                 curr_value_stack.append(arg)
-    #assert old_waiting_binops == []
-    #assert old_value_stacks == []
-    #assert curr_waiting_binops == []
-    #assert len(curr_value_stack) == 1
     return curr_value_stack.pop() 
     
 # returns a 0-argument function which re-evaluates the expression
