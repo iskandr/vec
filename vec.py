@@ -3,6 +3,19 @@ import scipy
 import scipy.signal 
 import scipy.stats
 
+def clean(x):
+    top = scipy.stats.scoreatpercentile(x, 99)
+    bottom = scipy.stats.scoreatpercentile(x, 1)    
+    outliers = np.abs(x) > 2 * top 
+    if np.any(outliers):
+        x = x.copy()
+        x[outliers & (x < 0)] = bottom
+        x[outliers & (x > 0)] = top 
+    return x
+
+def diff(x):
+    return np.concatenate([[0], np.diff(x)])
+
 def avg(x,y):
     return (x+y)/2
             
@@ -24,8 +37,6 @@ def replace_nan(x,y):
 def replace_inf_or_nan(x,y):
     return replace_inf(replace_nan(x,y), y)
 
-# ratio between two quantities, in the presence of zeros and weird extrema
-# if a ratio is bad (too small, too big, NaN, or inf) set it to 1.0 
 def safe_div(x,y):
     x_zero = x == 0
     y_zero = y == 0
@@ -104,18 +115,6 @@ binops = {
 }
 
 
-def clean(x):
-    top = scipy.stats.scoreatpercentile(x, 99)
-    bottom = scipy.stats.scoreatpercentile(x, 1)    
-    outliers = np.abs(x) > 2 * top 
-    if np.any(outliers):
-        x = x.copy()
-        x[outliers & (x < 0)] = bottom
-        x[outliers & (x > 0)] = top 
-    return x
-
-def diff(x):
-    return np.concatenate([[0], np.diff(x)])
     
 unops = { 
     'diff': diff, 
