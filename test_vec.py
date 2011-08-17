@@ -1,6 +1,20 @@
 import vec
 import numpy as np
 
+def test_tokenize(): 
+    res = expr_lang.tokenize("x+y") 
+    expected = ["x", "+", "y"] 
+    print "Expected:", expected, "Result:", res 
+    assert res == expected 
+    res2 = expr_lang.tokenize("bid/mean/5s >=3.234")
+    expected2 = ["bid/mean/5s", ">=", "3.234"] 
+    print "Expected:", expected2, "Result:", res2 
+    assert res2 == expected2
+    res3 = expr_lang.tokenize("(log2 x) + (log2 y)")
+    expected3 = ['(', 'log2', 'x', ')', '+', '(', 'log2', 'y', ')']
+    print "Expected:", expected3, "Result:", res3
+    assert res3 == expected3 
+
 def test_compiler_simple():
     code = vec.compile_expr('3+4')
     assert code({}) == 7 
