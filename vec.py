@@ -137,19 +137,27 @@ def tokenize(s):
     
     tokens = []
     curr = ''
-    special = ['+', '-', '%', '*', '(', ')'] 
+    
+    special = ['(', ')', '+', '-', '*', '%', '>', '>=', '<', '<=', '=']
     for c in s:
-        is_special = c in special 
-        if c == ' ' or c == '\t' or is_special:
-            if len(curr) > 0:
-                tokens.append(curr)
+        if c == ' ' or c == '\t': 
+            if curr != '': tokens.append(curr)
+            curr = '' 
+        elif c in special:
+            if curr + c in special: 
+                curr += c
+            else: 
+                if curr != '': tokens.append(curr)
                 curr = ''
-            if is_special: tokens.append(c)
+                tokens.append(c) 
         else:
-            curr = curr + c 
+            if curr in special:
+                if curr != '': tokens.append(curr)
+                curr = c 
+            else: 
+                curr += c 
     if curr != '': tokens.append(curr)
     return tokens 
-
 
 def mk_const_fn(const):
     def fn(env):
